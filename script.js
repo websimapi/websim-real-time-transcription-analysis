@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let final_transcript = '';
         let isRecording = false;
-        let finalTranscriptLength = 0; // Track the length of finalized transcript
+        let lastResultIndex = 0; // Track the last processed result index
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
@@ -32,32 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 interimTranscriptDiv.innerHTML = '';
                 analysisResultDiv.innerHTML = '';
                 final_transcript = '';
-                finalTranscriptLength = 0; // Reset the tracker
+                lastResultIndex = 0; // Reset the tracker
                 isRecording = true;
             }
         };
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
-            let new_final_transcript = '';
             
-            // Build the complete final transcript from all final results
-            for (let i = 0; i < event.results.length; i++) {
+            // Process only new results to avoid duplicates
+            for (let i = lastResultIndex; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
-                    new_final_transcript += event.results[i][0].transcript + ' ';
+                    // Add new final result to our transcript
+                    final_transcript += event.results[i][0].transcript + ' ';
+                    lastResultIndex = i + 1; // Update the index to track progress
                 } else {
+                    // Show interim results (non-final)
                     interim_transcript += event.results[i][0].transcript;
                 }
             }
             
-            // Only update if we have new final content
-            if (new_final_transcript.length > finalTranscriptLength) {
-                final_transcript = new_final_transcript;
-                finalTranscriptLength = new_final_transcript.length;
-                finalTranscriptDiv.innerHTML = final_transcript;
-            }
-            
-            // Always update interim (it changes frequently)
+            // Update displays
+            finalTranscriptDiv.innerHTML = final_transcript;
             interimTranscriptDiv.innerHTML = interim_transcript;
         };
 
