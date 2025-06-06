@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let final_transcript = '';
         let isRecording = false;
-        let lastProcessedResultIndex = 0;
+        let finalTranscriptLength = 0; // Track the length of finalized transcript
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
@@ -32,25 +32,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 interimTranscriptDiv.innerHTML = '';
                 analysisResultDiv.innerHTML = '';
                 final_transcript = '';
-                lastProcessedResultIndex = 0;
+                finalTranscriptLength = 0; // Reset the tracker
                 isRecording = true;
             }
         };
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
+            let new_final_transcript = '';
             
-            // Only process new results that haven't been processed yet
-            for (let i = lastProcessedResultIndex; i < event.results.length; ++i) {
+            // Build the complete final transcript from all final results
+            for (let i = 0; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
-                    final_transcript += event.results[i][0].transcript + ' ';
-                    lastProcessedResultIndex = i + 1;
+                    new_final_transcript += event.results[i][0].transcript + ' ';
                 } else {
                     interim_transcript += event.results[i][0].transcript;
                 }
             }
             
-            finalTranscriptDiv.innerHTML = final_transcript;
+            // Only update if we have new final content
+            if (new_final_transcript.length > finalTranscriptLength) {
+                final_transcript = new_final_transcript;
+                finalTranscriptLength = new_final_transcript.length;
+                finalTranscriptDiv.innerHTML = final_transcript;
+            }
+            
+            // Always update interim (it changes frequently)
             interimTranscriptDiv.innerHTML = interim_transcript;
         };
 
