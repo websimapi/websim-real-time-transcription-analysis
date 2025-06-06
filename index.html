@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Transcription & Analysis</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app-container">
+        <h1>Audio Analyzer</h1>
+        <p class="description">Record your voice, get a real-time transcription, and then analyze it for key points.</p>
+        
+        <div id="controls">
+            <button id="startButton">Start Recording</button>
+            <button id="stopButton" class="hidden">Stop Recording</button>
+        </div>
+        
+        <div id="status" class="status-box">
+            <p>Status: Idle</p>
+        </div>
+
+        <div id="transcription-container" class="hidden">
+            <h2>Live Transcript</h2>
+            <div id="interim-transcript" class="transcript-box"></div>
+            <div id="final-transcript" class="transcript-box"></div>
+        </div>
+        
+        <div id="analysis-section" class="hidden">
+            <button id="analyzeButton">Analyze Transcript</button>
+            <h2>Analysis</h2>
+            <div id="analysis-result" class="result-box">
+                <p>Click "Analyze Transcript" to see the key points.</p>
+            </div>
+        </div>
+
+        <div id="error-container" class="hidden">
+            <p>Sorry, your browser doesn't support the Web Speech API. Please try Chrome on desktop or Android.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
