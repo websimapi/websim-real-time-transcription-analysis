@@ -19,92 +19,85 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
-        let final_transcript = '';
+        let final_transcript = ''; // Stores the committed transcript from previous segments
+        let current_transcript_part = ''; // Stores the final transcript from the current, active segment
         let isRecording = false;
-        let lastResultIndex = 0; // Track the last processed result index
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
             transcriptionContainer.classList.remove('hidden');
             analysisSection.classList.add('hidden');
-            if (!isRecording) {
+            if (!isRecording) { // This is the initial start, not a restart
                 finalTranscriptDiv.innerHTML = '';
                 interimTranscriptDiv.innerHTML = '';
-                analysisResultDiv.innerHTML = '';
+                analysisResultDiv.innerHTML = '<p>Click "Analyze Transcript" to see the key points.</p>';
                 final_transcript = '';
-                lastResultIndex = 0; // Reset the tracker
+                current_transcript_part = '';
                 isRecording = true;
             }
         };
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
+            let current_segment_final = '';
             
-            // Process only new results to avoid duplicates
-            for (let i = lastResultIndex; i < event.results.length; i++) {
+            // Rebuild the transcript for the current segment from scratch each time
+            for (let i = 0; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
-                    // Add new final result to our transcript
-                    final_transcript += event.results[i][0].transcript + ' ';
-                    lastResultIndex = i + 1; // Update the index to track progress
+                    current_segment_final += event.results[i][0].transcript;
                 } else {
-                    // Show interim results (non-final)
                     interim_transcript += event.results[i][0].transcript;
                 }
             }
             
-            // Update displays
-            finalTranscriptDiv.innerHTML = final_transcript;
+            current_transcript_part = current_segment_final;
+
+            // Update displays by combining the committed transcript with the current one
+            finalTranscriptDiv.innerHTML = final_transcript + current_transcript_part;
             interimTranscriptDiv.innerHTML = interim_transcript;
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            if (event.error === 'no-speech' && isRecording) {
-                // Restart recognition if no speech detected but still recording
-                setTimeout(() => {
-                    if (isRecording) {
-                        try {
-                            recognition.start();
-                        } catch (e) {
-                            console.log('Recognition restart failed:', e);
-                        }
-                    }
-                }, 100);
-            } else if (event.error !== 'aborted') {
+            // Don't auto-restart on 'no-speech'. The onend event will handle restarts naturally.
+            if (event.error !== 'aborted' && event.error !== 'no-speech') {
                 statusDiv.innerHTML = `<p>Status: Error - ${event.error}. Please ensure microphone access is allowed.</p>`;
             }
         };
 
         recognition.onend = () => {
             if (isRecording) {
+                // A segment ended (e.g., due to timeout). Commit the transcript from this segment.
+                final_transcript += current_transcript_part;
+                // Add a space to separate from the next segment, if needed.
+                if (current_transcript_part.length > 0) {
+                    final_transcript += ' ';
+                }
+                current_transcript_part = '';
+
                 // Automatically restart recognition to keep recording continuous
                 try {
                     recognition.start();
                 } catch (e) {
-                    console.log('Recognition restart failed:', e);
-                    // If restart fails, try again after a short delay
-                    setTimeout(() => {
-                        if (isRecording) {
-                            try {
-                                recognition.start();
-                            } catch (e2) {
-                                console.log('Recognition restart failed again:', e2);
-                                isRecording = false;
-                                statusDiv.innerHTML = '<p>Status: Recording stopped due to error.</p>';
-                                startButton.classList.remove('hidden');
-                                stopButton.classList.add('hidden');
-                            }
-                        }
-                    }, 100);
+                    console.error('Recognition restart failed:', e);
+                    isRecording = false; // Stop recording if restart fails
+                    statusDiv.innerHTML = '<p>Status: Recording stopped due to error.</p>';
+                    startButton.classList.remove('hidden');
+                    stopButton.classList.add('hidden');
                 }
             } else {
+                // Recording was manually stopped by the user.
+                // Commit the very last part of the transcript.
+                final_transcript += current_transcript_part;
+
                 statusDiv.innerHTML = '<p>Status: Recording stopped.</p>';
                 startButton.classList.remove('hidden');
                 stopButton.classList.add('hidden');
                 
                 if (final_transcript.trim().length > 0) {
+                    finalTranscriptDiv.innerHTML = final_transcript; // Final update to display
+                    interimTranscriptDiv.innerHTML = '';
                     analysisSection.classList.remove('hidden');
-                    analysisResultDiv.innerHTML = '<p>Click "Analyze Transcript" to see the key points.</p>';
                     analyzeButton.disabled = false;
                 } else {
                      analysisSection.classList.add('hidden');
@@ -114,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         startButton.addEventListener('click', () => {
             try {
+                // isRecording is false here. onstart will handle initialization.
                 recognition.start();
                 startButton.classList.add('hidden');
                 stopButton.classList.remove('hidden');
@@ -124,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         stopButton.addEventListener('click', () => {
-            isRecording = false;
+            isRecording = false; // Signal to onend that this was a manual stop
             recognition.stop();
         });
 
