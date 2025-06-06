@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
-    let isRecording = false; // To track recording state
 
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
@@ -24,6 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
+            transcriptionContainer.classList.remove('hidden');
+            analysisSection.classList.add('hidden');
+            finalTranscriptDiv.innerHTML = '';
+            interimTranscriptDiv.innerHTML = '';
+            analysisResultDiv.innerHTML = '';
+            final_transcript = '';
         };
 
         recognition.onresult = (event) => {
@@ -42,21 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.onerror = (event) => {
             statusDiv.innerHTML = `<p>Status: Error - ${event.error}. Please ensure microphone access is allowed.</p>`;
             console.error('Speech recognition error:', event.error);
-            // On critical errors like permission denied, stop trying to record.
-            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                isRecording = false;
-            }
         };
 
         recognition.onend = () => {
-            // If we are still supposed to be recording, restart it.
-            // This handles the case where the browser stops recognition after a period of silence or for other reasons.
-            if (isRecording) {
-                recognition.start();
-                return;
-            }
-            
-            // This part runs only when the user has explicitly stopped recording or a critical error occurred.
             statusDiv.innerHTML = '<p>Status: Recording stopped.</p>';
             startButton.classList.remove('hidden');
             stopButton.classList.add('hidden');
@@ -71,24 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         startButton.addEventListener('click', () => {
-            isRecording = true;
-
-            // Reset transcript and UI for a new recording session
-            final_transcript = '';
-            finalTranscriptDiv.innerHTML = '';
-            interimTranscriptDiv.innerHTML = '';
-            analysisResultDiv.innerHTML = '<p>Click "Analyze Transcript" to see the key points.</p>';
-            transcriptionContainer.classList.remove('hidden');
-            analysisSection.classList.add('hidden');
-            
             recognition.start();
-
             startButton.classList.add('hidden');
             stopButton.classList.remove('hidden');
         });
 
         stopButton.addEventListener('click', () => {
-            isRecording = false;
             recognition.stop();
         });
 
@@ -132,3 +113,4 @@ document.addEventListener('DOMContentLoaded', () => {
         errorContainer.classList.remove('hidden');
     }
 });
+
