@@ -37,14 +37,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
+            let new_final_transcript = '';
+            
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    final_transcript += event.results[i][0].transcript + ' ';
+                    new_final_transcript += event.results[i][0].transcript + ' ';
                 } else {
                     interim_transcript += event.results[i][0].transcript;
                 }
             }
-            finalTranscriptDiv.innerHTML = final_transcript;
+            
+            // Only add new final results to avoid duplicates
+            if (new_final_transcript) {
+                final_transcript += new_final_transcript;
+                finalTranscriptDiv.innerHTML = final_transcript;
+            }
+            
             interimTranscriptDiv.innerHTML = interim_transcript;
         };
 
