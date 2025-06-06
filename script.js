@@ -20,15 +20,19 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.lang = 'en-US';
 
         let final_transcript = '';
+        let isRecording = false;
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
             transcriptionContainer.classList.remove('hidden');
             analysisSection.classList.add('hidden');
-            finalTranscriptDiv.innerHTML = '';
-            interimTranscriptDiv.innerHTML = '';
-            analysisResultDiv.innerHTML = '';
-            final_transcript = '';
+            if (!isRecording) {
+                finalTranscriptDiv.innerHTML = '';
+                interimTranscriptDiv.innerHTML = '';
+                analysisResultDiv.innerHTML = '';
+                final_transcript = '';
+                isRecording = true;
+            }
         };
 
         recognition.onresult = (event) => {
@@ -45,31 +49,73 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         recognition.onerror = (event) => {
-            statusDiv.innerHTML = `<p>Status: Error - ${event.error}. Please ensure microphone access is allowed.</p>`;
             console.error('Speech recognition error:', event.error);
+            if (event.error === 'no-speech' && isRecording) {
+                // Restart recognition if no speech detected but still recording
+                setTimeout(() => {
+                    if (isRecording) {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.log('Recognition restart failed:', e);
+                        }
+                    }
+                }, 100);
+            } else if (event.error !== 'aborted') {
+                statusDiv.innerHTML = `<p>Status: Error - ${event.error}. Please ensure microphone access is allowed.</p>`;
+            }
         };
 
         recognition.onend = () => {
-            statusDiv.innerHTML = '<p>Status: Recording stopped.</p>';
-            startButton.classList.remove('hidden');
-            stopButton.classList.add('hidden');
-            
-            if (final_transcript.trim().length > 0) {
-                analysisSection.classList.remove('hidden');
-                analysisResultDiv.innerHTML = '<p>Click "Analyze Transcript" to see the key points.</p>';
-                analyzeButton.disabled = false;
+            if (isRecording) {
+                // Automatically restart recognition to keep recording continuous
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log('Recognition restart failed:', e);
+                    // If restart fails, try again after a short delay
+                    setTimeout(() => {
+                        if (isRecording) {
+                            try {
+                                recognition.start();
+                            } catch (e2) {
+                                console.log('Recognition restart failed again:', e2);
+                                isRecording = false;
+                                statusDiv.innerHTML = '<p>Status: Recording stopped due to error.</p>';
+                                startButton.classList.remove('hidden');
+                                stopButton.classList.add('hidden');
+                            }
+                        }
+                    }, 100);
+                }
             } else {
-                 analysisSection.classList.add('hidden');
+                statusDiv.innerHTML = '<p>Status: Recording stopped.</p>';
+                startButton.classList.remove('hidden');
+                stopButton.classList.add('hidden');
+                
+                if (final_transcript.trim().length > 0) {
+                    analysisSection.classList.remove('hidden');
+                    analysisResultDiv.innerHTML = '<p>Click "Analyze Transcript" to see the key points.</p>';
+                    analyzeButton.disabled = false;
+                } else {
+                     analysisSection.classList.add('hidden');
+                }
             }
         };
 
         startButton.addEventListener('click', () => {
-            recognition.start();
-            startButton.classList.add('hidden');
-            stopButton.classList.remove('hidden');
+            try {
+                recognition.start();
+                startButton.classList.add('hidden');
+                stopButton.classList.remove('hidden');
+            } catch (e) {
+                console.error('Failed to start recognition:', e);
+                statusDiv.innerHTML = '<p>Status: Failed to start recording. Please try again.</p>';
+            }
         });
 
         stopButton.addEventListener('click', () => {
+            isRecording = false;
             recognition.stop();
         });
 
@@ -113,4 +159,3 @@ document.addEventListener('DOMContentLoaded', () => {
         errorContainer.classList.remove('hidden');
     }
 });
-
