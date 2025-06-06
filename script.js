@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let final_transcript = '';
         let isRecording = false;
+        let lastProcessedResultIndex = 0;
 
         recognition.onstart = () => {
             statusDiv.innerHTML = '<p>Status: Recording... Speak now!</p>';
@@ -31,28 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 interimTranscriptDiv.innerHTML = '';
                 analysisResultDiv.innerHTML = '';
                 final_transcript = '';
+                lastProcessedResultIndex = 0;
                 isRecording = true;
             }
         };
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
-            let new_final_transcript = '';
             
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
+            // Only process new results that haven't been processed yet
+            for (let i = lastProcessedResultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    new_final_transcript += event.results[i][0].transcript + ' ';
+                    final_transcript += event.results[i][0].transcript + ' ';
+                    lastProcessedResultIndex = i + 1;
                 } else {
                     interim_transcript += event.results[i][0].transcript;
                 }
             }
             
-            // Only add new final results to avoid duplicates
-            if (new_final_transcript) {
-                final_transcript += new_final_transcript;
-                finalTranscriptDiv.innerHTML = final_transcript;
-            }
-            
+            finalTranscriptDiv.innerHTML = final_transcript;
             interimTranscriptDiv.innerHTML = interim_transcript;
         };
 
